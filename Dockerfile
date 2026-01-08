@@ -51,8 +51,9 @@ WORKDIR /app
 RUN git clone https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1.git . && \
     git lfs pull
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies (fix bpy version - 4.0 doesn't exist, use 4.2.0)
+RUN sed -i 's/bpy==4.0/bpy>=4.2.0/' requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod huggingface_hub[cli]
