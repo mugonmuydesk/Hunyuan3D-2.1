@@ -1,0 +1,78 @@
+{
+  "title": "Hunyuan3D-2.1 Image-to-3D",
+  "description": "Generate high-fidelity 3D models with PBR materials from images. Developed by Tencent.",
+  "type": "serverless",
+  "category": "image",
+  "iconUrl": "https://huggingface.co/tencent/Hunyuan3D-2.1/resolve/main/assets/teaser.gif",
+
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 100,
+    "gpuCount": 1,
+    "gpuIds": "NVIDIA A100 80GB PCIe,NVIDIA A100-SXM4-40GB,NVIDIA A40,NVIDIA RTX A6000,NVIDIA L40S",
+    "allowedCudaVersions": ["12.4", "12.3", "12.2", "12.1"],
+
+    "presets": [
+      {
+        "name": "Full Quality (Texture + Shape)",
+        "defaults": {
+          "TEXTURE_RESOLUTION": 1024,
+          "MAX_NUM_VIEW": 8
+        }
+      },
+      {
+        "name": "Balanced (512px textures)",
+        "defaults": {
+          "TEXTURE_RESOLUTION": 512,
+          "MAX_NUM_VIEW": 6
+        }
+      },
+      {
+        "name": "Fast (Shape only)",
+        "defaults": {
+          "TEXTURE_RESOLUTION": 256,
+          "MAX_NUM_VIEW": 4
+        }
+      }
+    ],
+
+    "env": [
+      {
+        "key": "HF_HOME",
+        "value": "/models"
+      },
+      {
+        "key": "TEXTURE_RESOLUTION",
+        "input": {
+          "name": "Texture Resolution",
+          "type": "number",
+          "description": "Resolution of generated PBR textures",
+          "min": 256,
+          "max": 2048,
+          "default": 512
+        }
+      },
+      {
+        "key": "MAX_NUM_VIEW",
+        "input": {
+          "name": "Number of Views",
+          "type": "number",
+          "description": "Number of views for texture generation (more = better quality, slower)",
+          "min": 4,
+          "max": 12,
+          "default": 6
+        }
+      },
+      {
+        "key": "HF_TOKEN",
+        "input": {
+          "name": "Hugging Face Token",
+          "type": "string",
+          "description": "Optional: Hugging Face token if model requires authentication",
+          "default": "",
+          "advanced": true
+        }
+      }
+    ]
+  }
+}
