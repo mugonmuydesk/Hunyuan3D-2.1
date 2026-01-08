@@ -39,8 +39,8 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 &
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
     python -m ensurepip --upgrade
 
-# Upgrade pip
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+# Upgrade pip and install build tools
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel ninja
 
 # Install PyTorch 2.5.1 with CUDA 12.4
 RUN pip install --no-cache-dir \
@@ -66,9 +66,9 @@ RUN pip install --no-cache-dir runpod huggingface_hub[cli]
 
 # Build custom rasterizer (CUDA extension)
 WORKDIR /app/hy3dpaint/custom_rasterizer
-RUN pip install --no-cache-dir -v . 2>&1 || \
-    (echo "Retrying with ninja disabled..." && \
-     pip install --no-cache-dir -v . --config-settings="--build-option=--no-ninja" 2>&1)
+ENV PATH="/usr/bin:${PATH}"
+RUN python setup.py build_ext --inplace && \
+    pip install --no-cache-dir -e .
 
 # Build mesh painter
 WORKDIR /app/hy3dpaint
