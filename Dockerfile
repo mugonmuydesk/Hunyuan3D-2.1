@@ -23,15 +23,16 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     build-essential \
     ninja-build \
-    python3.10 \
-    python3.10-dev \
-    python3.10-venv \
-    python3-pip \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update \
+    && apt-get install -y python3.11 python3.11-dev python3.11-venv python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Python 3.10 as default
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+# Set Python 3.11 as default (required for bpy==4.0)
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
+    python -m ensurepip --upgrade
 
 # Upgrade pip
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
