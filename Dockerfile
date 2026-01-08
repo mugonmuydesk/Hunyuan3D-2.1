@@ -7,6 +7,9 @@ FROM nvidia/cuda:12.4.0-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV CUDA_HOME=/usr/local/cuda
+ENV TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0"
+ENV FORCE_CUDA=1
+ENV MAX_JOBS=4
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -22,6 +25,8 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libgomp1 \
     build-essential \
+    gcc \
+    g++ \
     ninja-build \
     software-properties-common \
     && add-apt-repository ppa:deadsnakes/ppa -y \
@@ -59,9 +64,11 @@ RUN sed -i 's/bpy==4.0/bpy>=4.2.0/' requirements.txt && \
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod huggingface_hub[cli]
 
-# Build custom rasterizer
+# Build custom rasterizer (CUDA extension)
 WORKDIR /app/hy3dpaint/custom_rasterizer
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir -v . 2>&1 || \
+    (echo "Retrying with ninja disabled..." && \
+     pip install --no-cache-dir -v . --config-settings="--build-option=--no-ninja" 2>&1)
 
 # Build mesh painter
 WORKDIR /app/hy3dpaint
