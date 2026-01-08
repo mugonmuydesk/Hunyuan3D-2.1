@@ -79,7 +79,9 @@ def handler(job: dict) -> dict:
         model: Base64 encoded 3D model file (GLB or OBJ)
         format: The output format used
     """
-    job_input = job["input"]
+    job_input = job.get("input")
+    if not isinstance(job_input, dict):
+        return {"error": "Invalid request: missing 'input' field"}
 
     # Validate required inputs
     if "image_base64" not in job_input:
