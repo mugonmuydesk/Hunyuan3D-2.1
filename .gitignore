@@ -27,3 +27,4 @@ test_output.*
 # Secrets
 .env
 *.key
+temp_check
