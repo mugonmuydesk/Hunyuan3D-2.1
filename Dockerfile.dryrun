@@ -52,14 +52,20 @@ RUN echo "=== VERIFY: Python ===" && \
 # =============================================================================
 # STAGE 2: PyTorch
 # =============================================================================
+# Clean up to free disk space before large PyTorch install
+RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    apt-get clean
+
 RUN echo "=== STAGE 2: PyTorch ===" && \
     pip install --no-cache-dir --upgrade pip setuptools wheel ninja pybind11
 
 # Note: cu124 has known issues with PyTorch 2.5.x, using cu121 instead
-# Install PyTorch packages separately to avoid resolution issues
-RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
-RUN pip install --no-cache-dir torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
-RUN pip install --no-cache-dir torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+# Install all PyTorch packages in one command to minimize disk usage during install
+RUN pip install --no-cache-dir \
+    torch==2.5.1 \
+    torchvision==0.20.1 \
+    torchaudio==2.5.1 \
+    --index-url https://download.pytorch.org/whl/cu121
 
 # VERIFY
 RUN echo "=== VERIFY: PyTorch ===" && \
