@@ -100,7 +100,7 @@ RUN wget -q https://download.blender.org/release/Blender4.0/blender-4.0.2-linux-
 
 # Add Blender's Python modules to path
 ENV BLENDER_PATH=/opt/blender
-ENV PYTHONPATH="${BLENDER_PATH}/4.0/scripts/modules:${PYTHONPATH}"
+ENV PYTHONPATH="${BLENDER_PATH}/4.0/scripts/modules${PYTHONPATH:+:$PYTHONPATH}"
 ENV PATH="${BLENDER_PATH}:${PATH}"
 
 # =============================================================================
