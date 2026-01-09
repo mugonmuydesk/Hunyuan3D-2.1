@@ -48,9 +48,9 @@ jobs:
           echo "## Build Successful! :white_check_mark:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "All dependency verification checks passed:" >> $GITHUB_STEP_SUMMARY
-          echo "- Python 3.10" >> $GITHUB_STEP_SUMMARY
-          echo "- PyTorch 2.5.1 + CUDA" >> $GITHUB_STEP_SUMMARY
-          echo "- custom_rasterizer (prebuilt wheel)" >> $GITHUB_STEP_SUMMARY
+          echo "- Python 3.12" >> $GITHUB_STEP_SUMMARY
+          echo "- PyTorch 2.5.1+cu121" >> $GITHUB_STEP_SUMMARY
+          echo "- custom_rasterizer (locally-built wheel)" >> $GITHUB_STEP_SUMMARY
           echo "- RunPod SDK" >> $GITHUB_STEP_SUMMARY
           echo "- Handler imports" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
