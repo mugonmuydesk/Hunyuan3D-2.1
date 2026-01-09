@@ -2,8 +2,8 @@
 # Image-to-3D generation with PBR materials
 # Requires ~29GB VRAM (A40, A100, RTX A6000)
 #
-# KEY FIX: Uses Python 3.10 + prebuilt custom_rasterizer wheel from Tencent
-# instead of compiling from source (which fails without GPU in build env)
+# KEY FIX: Uses Python 3.12 + locally-built custom_rasterizer wheel
+# (HuggingFace wheel has ABI mismatch with all PyTorch 2.3-2.5 versions)
 
 FROM nvidia/cuda:12.4.0-devel-ubuntu22.04
 
@@ -35,19 +35,21 @@ RUN apt-get update && apt-get install -y \
     ninja-build \
     software-properties-common \
     && add-apt-repository ppa:deadsnakes/ppa -y \
+    && add-apt-repository ppa:ubuntu-toolchain-r/test -y \
     && apt-get update \
-    && apt-get install -y python3.10 python3.10-dev python3.10-venv python3.10-distutils \
+    && apt-get install -y python3.12 python3.12-dev python3.12-venv \
+    && apt-get install -y libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Python 3.10 as default (MUST match prebuilt wheel: cp310)
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+# Set Python 3.12 as default (MUST match locally-built wheel: cp312)
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 
-# Install pip for Python 3.10
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+# Install pip for Python 3.12
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
 
 # VERIFY: Python version
-RUN python --version | grep "3.10" || (echo "ERROR: Python 3.10 required" && exit 1)
+RUN python --version | grep "3.12" || (echo "ERROR: Python 3.12 required" && exit 1)
 
 # =============================================================================
 # STAGE 2: PyTorch (must be installed BEFORE any CUDA extensions)
@@ -65,7 +67,7 @@ RUN pip install --no-cache-dir torchaudio==2.5.1 --index-url https://download.py
 RUN python -c "import torch; print(f'PyTorch {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); assert torch.__version__.startswith('2.5'), 'Wrong PyTorch version'"
 
 # Add PyTorch libs to LD_LIBRARY_PATH for CUDA extensions (custom_rasterizer needs libc10.so)
-ENV LD_LIBRARY_PATH="/usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/lib/python3.12/dist-packages/torch/lib:${LD_LIBRARY_PATH}"
 
 # =============================================================================
 # STAGE 3: Clone Hunyuan3D-2.1 source
@@ -84,15 +86,22 @@ RUN test -f /app/requirements.txt || (echo "ERROR: requirements.txt not found" &
 # =============================================================================
 # STAGE 4a: Install Blender for bpy support
 # =============================================================================
-# Blender provides the bpy module - not available via pip
-RUN apt-get update && apt-get install -y software-properties-common && \
-    add-apt-repository ppa:savoury1/blender -y && \
-    apt-get update && apt-get install -y blender && \
-    rm -rf /var/lib/apt/lists/*
+# Use official Blender tarball - PPA has broken dependencies on Ubuntu 22.04
+RUN apt-get update && apt-get install -y \
+    libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 \
+    libxkbcommon0 libsm6 libice6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and extract Blender 4.0 LTS
+RUN wget -q https://download.blender.org/release/Blender4.0/blender-4.0.2-linux-x64.tar.xz -O /tmp/blender.tar.xz && \
+    tar -xf /tmp/blender.tar.xz -C /opt && \
+    rm /tmp/blender.tar.xz && \
+    ln -s /opt/blender-4.0.2-linux-x64 /opt/blender
 
 # Add Blender's Python modules to path
-ENV BLENDER_PATH=/usr/share/blender
-ENV PYTHONPATH="${PYTHONPATH}:${BLENDER_PATH}/scripts/modules"
+ENV BLENDER_PATH=/opt/blender
+ENV PYTHONPATH="${BLENDER_PATH}/4.0/scripts/modules:${PYTHONPATH}"
+ENV PATH="${BLENDER_PATH}:${PATH}"
 
 # =============================================================================
 # STAGE 4b: Python dependencies (inference-optimized)
@@ -112,10 +121,12 @@ RUN python -c "import trimesh; print(f'trimesh {trimesh.__version__}')"
 RUN python -c "import torch; assert torch.__version__.startswith('2.5'), f'PyTorch was overwritten to {torch.__version__}'"
 
 # =============================================================================
-# STAGE 5: Custom rasterizer (PREBUILT WHEEL - critical for RunPod builds)
+# STAGE 5: Custom rasterizer (locally-built wheel for PyTorch 2.5.1+cu121, Python 3.12)
 # =============================================================================
-RUN pip install --no-cache-dir \
-    https://huggingface.co/spaces/tencent/Hunyuan3D-2.1/resolve/main/custom_rasterizer-0.1-cp310-cp310-linux_x86_64.whl
+# HuggingFace wheel has ABI mismatch - using locally-built wheel instead
+COPY custom_rasterizer-0.1-cp312-cp312-linux_x86_64.whl /tmp/
+RUN pip install --no-cache-dir /tmp/custom_rasterizer-0.1-cp312-cp312-linux_x86_64.whl && \
+    rm /tmp/custom_rasterizer-0.1-cp312-cp312-linux_x86_64.whl
 
 # VERIFY: custom_rasterizer works
 RUN python -c "import custom_rasterizer; print('custom_rasterizer: OK')"
