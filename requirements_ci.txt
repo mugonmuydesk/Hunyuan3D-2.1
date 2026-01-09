@@ -14,6 +14,7 @@ pygltflib
 Pillow
 numpy
 scipy
+opencv-python-headless
 
 # Utilities
 tqdm
