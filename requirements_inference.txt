@@ -35,9 +35,8 @@ opencv-python==4.10.0.84
 imageio==2.36.0
 scikit-image==0.24.0
 rembg==2.0.65
-realesrgan==0.3.0
-# tb_nightly==2.18.0a20240726  # EXCLUDED: tensorboard training logging
-basicsr==1.3.3.3
+# realesrgan==0.3.0  # EXCLUDED: requires basicsr>=1.4.2 which has no Python 3.12 wheels
+# basicsr==1.3.3.3   # EXCLUDED: conflict with realesrgan dependency
 
 # 3D Mesh Processing
 trimesh==4.4.7
