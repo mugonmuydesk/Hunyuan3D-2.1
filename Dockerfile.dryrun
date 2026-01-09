@@ -59,18 +59,18 @@ RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
 RUN echo "=== STAGE 2: PyTorch ===" && \
     pip install --no-cache-dir --upgrade pip setuptools wheel ninja pybind11
 
-# Use cu124 to match prebuilt custom_rasterizer wheel (built with PyTorch 2.5.1+cu124)
-# Install all PyTorch packages in one command to minimize disk usage during install
+# Use PyTorch 2.4.1+cu124 to match prebuilt custom_rasterizer wheel ABI
+# (PyTorch 2.5.x has incompatible c10 ABI with the prebuilt wheel)
 RUN pip install --no-cache-dir \
-    torch==2.5.1 \
-    torchvision==0.20.1 \
-    torchaudio==2.5.1 \
+    torch==2.4.1 \
+    torchvision==0.19.1 \
+    torchaudio==2.4.1 \
     --index-url https://download.pytorch.org/whl/cu124
 
 # VERIFY
 RUN echo "=== VERIFY: PyTorch ===" && \
-    python -c "import torch; print(f'PyTorch {torch.__version__}'); assert torch.__version__.startswith('2.5'), 'Wrong version'" && \
-    echo "PASS: PyTorch 2.5.1"
+    python -c "import torch; print(f'PyTorch {torch.__version__}'); assert torch.__version__.startswith('2.4'), 'Wrong version'" && \
+    echo "PASS: PyTorch 2.4.1"
 
 # Add PyTorch libs to LD_LIBRARY_PATH for CUDA extensions (custom_rasterizer needs libc10.so)
 ENV LD_LIBRARY_PATH="/usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}"
@@ -106,8 +106,8 @@ RUN echo "=== VERIFY: Key packages ===" && \
     python -c "import trimesh; print(f'PASS: trimesh {trimesh.__version__}')"
 
 # Re-verify PyTorch
-RUN python -c "import torch; v=torch.__version__; assert v.startswith('2.5'), f'FAIL: PyTorch overwritten to {v}'" && \
-    echo "PASS: PyTorch still 2.5.x"
+RUN python -c "import torch; v=torch.__version__; assert v.startswith('2.4'), f'FAIL: PyTorch overwritten to {v}'" && \
+    echo "PASS: PyTorch still 2.4.x"
 
 # =============================================================================
 # STAGE 5: Custom rasterizer (CRITICAL)
