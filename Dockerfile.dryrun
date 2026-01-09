@@ -90,8 +90,11 @@ RUN echo "=== VERIFY: Repo structure ===" && \
 # =============================================================================
 # STAGE 4: Python dependencies
 # =============================================================================
+# Filter out bpy (Blender Python) - not pip-installable, requires special build
+# For serverless, mesh operations use trimesh/pymeshlab instead
 RUN echo "=== STAGE 4: Python dependencies ===" && \
-    pip install --no-cache-dir --ignore-installed -r requirements.txt
+    grep -v "^bpy" requirements.txt > requirements_filtered.txt && \
+    pip install --no-cache-dir --ignore-installed -r requirements_filtered.txt
 
 # VERIFY
 RUN echo "=== VERIFY: Key packages ===" && \
