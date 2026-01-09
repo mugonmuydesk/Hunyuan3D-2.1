@@ -64,6 +64,9 @@ RUN pip install --no-cache-dir torchaudio==2.5.1 --index-url https://download.py
 # VERIFY: PyTorch installed with CUDA
 RUN python -c "import torch; print(f'PyTorch {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); assert torch.__version__.startswith('2.5'), 'Wrong PyTorch version'"
 
+# Add PyTorch libs to LD_LIBRARY_PATH for CUDA extensions (custom_rasterizer needs libc10.so)
+ENV LD_LIBRARY_PATH="/usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}"
+
 # =============================================================================
 # STAGE 3: Clone Hunyuan3D-2.1 source
 # =============================================================================
@@ -92,11 +95,13 @@ ENV BLENDER_PATH=/usr/share/blender
 ENV PYTHONPATH="${PYTHONPATH}:${BLENDER_PATH}/scripts/modules"
 
 # =============================================================================
-# STAGE 4b: Python dependencies from requirements.txt
+# STAGE 4b: Python dependencies (inference-optimized)
 # =============================================================================
-# Filter out bpy (provided by Blender) and install other dependencies
-RUN grep -v "^bpy" requirements.txt > requirements_filtered.txt && \
-    pip install --no-cache-dir --ignore-installed -r requirements_filtered.txt
+# Use our trimmed requirements_inference.txt instead of full requirements.txt
+# Excludes: pytorch-lightning, deepspeed, tensorboard, gradio, bpy
+# This reduces image size significantly for serverless inference
+COPY requirements_inference.txt /tmp/requirements_inference.txt
+RUN pip install --no-cache-dir --ignore-installed -r /tmp/requirements_inference.txt
 
 # VERIFY: Key packages installed
 RUN python -c "import transformers; print(f'transformers {transformers.__version__}')"

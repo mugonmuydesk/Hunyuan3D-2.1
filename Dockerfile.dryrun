@@ -72,6 +72,9 @@ RUN echo "=== VERIFY: PyTorch ===" && \
     python -c "import torch; print(f'PyTorch {torch.__version__}'); assert torch.__version__.startswith('2.5'), 'Wrong version'" && \
     echo "PASS: PyTorch 2.5.1"
 
+# Add PyTorch libs to LD_LIBRARY_PATH for CUDA extensions (custom_rasterizer needs libc10.so)
+ENV LD_LIBRARY_PATH="/usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}"
+
 # =============================================================================
 # STAGE 3: Clone Hunyuan3D-2.1
 # =============================================================================

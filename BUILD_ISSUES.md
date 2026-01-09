@@ -118,7 +118,8 @@ gh run view RUN_ID --repo owner/repo --log-failed 2>&1 | tail -100
 | #3 | 4c5c0fc | Disk space | Failed |
 | #4 | 98e80de | Disk space (with cleanup) | Failed |
 | #5 | c02534b | bpy exclusion | Failed (18m55s) |
-| #6 | pending | Minimal CI requirements | Pending |
+| #6 | 8f62cf5 | custom_rasterizer libc10.so | Failed (5m10s) |
+| #7 | pending | LD_LIBRARY_PATH fix | Pending |
 
 ---
 
@@ -145,6 +146,26 @@ Created `requirements_ci.txt` with minimal deps for CI testing:
 - runpod (handler)
 
 Full requirements installed in production Dockerfile.
+
+**Status:** Fixed in commit `8f62cf5`
+
+---
+
+## Issue #6: custom_rasterizer libc10.so Missing
+
+**Error:**
+```
+ImportError: libc10.so: cannot open shared object file: No such file or directory
+```
+
+**Cause:**
+custom_rasterizer is a compiled CUDA extension that links against PyTorch's C++ libraries. PyTorch installs these libs in its package directory, but they're not in the default library search path.
+
+**Fix:**
+Add PyTorch's lib directory to LD_LIBRARY_PATH:
+```dockerfile
+ENV LD_LIBRARY_PATH="/usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}"
+```
 
 **Status:** Fixing in next commit
 
