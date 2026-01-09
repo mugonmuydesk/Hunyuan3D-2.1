@@ -54,11 +54,13 @@ RUN python --version | grep "3.10" || (echo "ERROR: Python 3.10 required" && exi
 # =============================================================================
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel ninja pybind11
 
+# Note: cu124 has known issues with PyTorch 2.5.x, using cu121 instead
+# The CUDA runtime is bundled with PyTorch, so this works with cuda:12.4 base image
 RUN pip install --no-cache-dir \
     torch==2.5.1 \
     torchvision==0.20.1 \
     torchaudio==2.5.1 \
-    --index-url https://download.pytorch.org/whl/cu124
+    --index-url https://download.pytorch.org/whl/cu121
 
 # VERIFY: PyTorch installed with CUDA
 RUN python -c "import torch; print(f'PyTorch {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); assert torch.__version__.startswith('2.5'), 'Wrong PyTorch version'"
