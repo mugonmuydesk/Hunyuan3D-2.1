@@ -1,0 +1,23 @@
+# Minimal requirements for CI dryrun testing
+# Full requirements are installed by Hunyuan3D-2.1 repo's requirements.txt
+
+# Core ML dependencies
+transformers>=4.30.0
+diffusers>=0.20.0
+accelerate
+
+# 3D processing (lightweight)
+trimesh
+pygltflib
+
+# Image processing
+Pillow
+numpy
+
+# Utilities
+tqdm
+safetensors
+huggingface_hub
+
+# RunPod handler dependencies
+runpod

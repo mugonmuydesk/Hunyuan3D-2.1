@@ -79,10 +79,24 @@ RUN test -d /app/hy3dpaint || (echo "ERROR: hy3dpaint not found" && exit 1)
 RUN test -f /app/requirements.txt || (echo "ERROR: requirements.txt not found" && exit 1)
 
 # =============================================================================
-# STAGE 4: Python dependencies from requirements.txt
+# STAGE 4a: Install Blender for bpy support
 # =============================================================================
-# Install dependencies but don't let it override our PyTorch version
-RUN pip install --no-cache-dir --ignore-installed -r requirements.txt
+# Blender provides the bpy module - not available via pip
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository ppa:savoury1/blender -y && \
+    apt-get update && apt-get install -y blender && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add Blender's Python modules to path
+ENV BLENDER_PATH=/usr/share/blender
+ENV PYTHONPATH="${PYTHONPATH}:${BLENDER_PATH}/scripts/modules"
+
+# =============================================================================
+# STAGE 4b: Python dependencies from requirements.txt
+# =============================================================================
+# Filter out bpy (provided by Blender) and install other dependencies
+RUN grep -v "^bpy" requirements.txt > requirements_filtered.txt && \
+    pip install --no-cache-dir --ignore-installed -r requirements_filtered.txt
 
 # VERIFY: Key packages installed
 RUN python -c "import transformers; print(f'transformers {transformers.__version__}')"
