@@ -52,14 +52,16 @@ RUN pip install --no-cache-dir \
 # Set working directory
 WORKDIR /app
 
-# Clone Hunyuan3D-2.1 repository
-RUN git clone https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1.git . && \
+# Clone Hunyuan3D-2.1 from our fork (has bpy version fix baked in)
+# Pin to specific commit for reproducible builds
+ARG HUNYUAN_COMMIT=c5c3228ebdf19ef0fe7fced9b83340910829391d
+RUN git clone https://github.com/mugonmuydesk/Hunyuan3D-2.1-src.git . && \
+    git checkout ${HUNYUAN_COMMIT} && \
     git lfs pull
 
-# Install Python dependencies (fix bpy version - 4.0 doesn't exist, use 4.2.0)
-# Use --ignore-installed to handle distutils-installed packages in base image
-RUN sed -i 's/bpy==4.0/bpy>=4.2.0/' requirements.txt && \
-    pip install --no-cache-dir --ignore-installed -r requirements.txt
+# Install Python dependencies
+# Use --ignore-installed to handle distutils-installed packages in base image (blinker, pyyaml)
+RUN pip install --no-cache-dir --ignore-installed -r requirements.txt
 
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod huggingface_hub[cli]
