@@ -33,21 +33,21 @@ RUN echo "=== STAGE 1: System dependencies ===" && \
     software-properties-common \
     && add-apt-repository ppa:deadsnakes/ppa -y \
     && apt-get update \
-    && apt-get install -y python3.10 python3.10-dev python3.10-venv python3.10-distutils \
+    && apt-get install -y python3.12 python3.12-dev python3.12-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Python 3.10 as default
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+# Set Python 3.12 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 
 # Install pip
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
 
 # VERIFY
 RUN echo "=== VERIFY: Python ===" && \
     python --version && \
-    python --version | grep "3.10" || (echo "FAIL: Python 3.10 required" && exit 1) && \
-    echo "PASS: Python 3.10"
+    python --version | grep "3.12" || (echo "FAIL: Python 3.12 required" && exit 1) && \
+    echo "PASS: Python 3.12"
 
 # =============================================================================
 # STAGE 2: PyTorch
@@ -59,12 +59,12 @@ RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
 RUN echo "=== STAGE 2: PyTorch ===" && \
     pip install --no-cache-dir --upgrade pip setuptools wheel ninja pybind11
 
-# Use PyTorch 2.5.1+cu124 (official requirement from Hunyuan3D docs)
+# Use PyTorch 2.5.1+cu121 (matches locally-built custom_rasterizer wheel)
 RUN pip install --no-cache-dir \
     torch==2.5.1 \
     torchvision==0.20.1 \
     torchaudio==2.5.1 \
-    --index-url https://download.pytorch.org/whl/cu124
+    --index-url https://download.pytorch.org/whl/cu121
 
 # VERIFY
 RUN echo "=== VERIFY: PyTorch ===" && \
@@ -72,7 +72,7 @@ RUN echo "=== VERIFY: PyTorch ===" && \
     echo "PASS: PyTorch 2.5.1"
 
 # Add PyTorch libs to LD_LIBRARY_PATH for CUDA extensions (custom_rasterizer needs libc10.so)
-ENV LD_LIBRARY_PATH="/usr/local/lib/python3.10/dist-packages/torch/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/lib/python3.12/dist-packages/torch/lib:${LD_LIBRARY_PATH}"
 
 # =============================================================================
 # STAGE 3: Clone Hunyuan3D-2.1
@@ -105,22 +105,21 @@ RUN echo "=== VERIFY: Key packages ===" && \
     python -c "import trimesh; print(f'PASS: trimesh {trimesh.__version__}')"
 
 # Re-verify PyTorch
-RUN python -c "import torch; v=torch.__version__; assert v.startswith('2.4'), f'FAIL: PyTorch overwritten to {v}'" && \
-    echo "PASS: PyTorch still 2.4.x"
+RUN python -c "import torch; v=torch.__version__; assert v.startswith('2.5'), f'FAIL: PyTorch overwritten to {v}'" && \
+    echo "PASS: PyTorch still 2.5.x"
 
 # =============================================================================
-# STAGE 5: Custom rasterizer (SKIP IN CI - will JIT compile at runtime with GPU)
+# STAGE 5: Custom rasterizer (locally-built wheel)
 # =============================================================================
-# The prebuilt HF wheel has ABI mismatch with all tested PyTorch versions (2.3-2.5)
-# The repo includes source code at /app/hy3dpaint/custom_rasterizer/
-# At runtime on RunPod (with GPU), it will JIT compile via torch.utils.cpp_extension
-#
-# For production: either JIT compile on first request, or build wheel during deploy
+# Using locally-built wheel that matches PyTorch 2.5.1+cu121 + Python 3.12
+COPY custom_rasterizer-0.1-cp312-cp312-linux_x86_64.whl /tmp/
 RUN echo "=== STAGE 5: Custom rasterizer ===" && \
-    echo "SKIP: custom_rasterizer wheel (ABI mismatch)" && \
-    echo "Source available at /app/hy3dpaint/custom_rasterizer/ for runtime JIT compilation" && \
-    ls -la /app/hy3dpaint/custom_rasterizer/ && \
-    echo "PASS: custom_rasterizer source present (will JIT compile at runtime with GPU)"
+    pip install --no-cache-dir /tmp/custom_rasterizer-0.1-cp312-cp312-linux_x86_64.whl && \
+    rm /tmp/custom_rasterizer-0.1-cp312-cp312-linux_x86_64.whl
+
+# VERIFY
+RUN echo "=== VERIFY: custom_rasterizer ===" && \
+    python -c "import custom_rasterizer; print('PASS: custom_rasterizer imported')"
 
 # =============================================================================
 # STAGE 6: mesh_inpaint_processor (optional)
@@ -193,7 +192,7 @@ RUN echo "" && \
     echo "=============================================" && \
     echo "Python:            $(python --version 2>&1)" && \
     python -c "import torch; print(f'PyTorch:           {torch.__version__}')" && \
-    echo "custom_rasterizer: SKIP (JIT compile at runtime)" && \
+    python -c "import custom_rasterizer; print('custom_rasterizer: OK')" && \
     python -c "import runpod; print(f'runpod:            {runpod.__version__}')" && \
     echo "Model download:    SKIPPED (dry run)" && \
     echo "=============================================" && \
