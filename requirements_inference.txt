@@ -2,8 +2,15 @@
 # Excludes training-only packages to reduce image size
 # Based on Hunyuan3D-2.1 requirements.txt
 
+--extra-index-url https://download.pytorch.org/whl/cu121
 --extra-index-url https://mirrors.cloud.tencent.com/pypi/simple/
 --extra-index-url https://mirrors.aliyun.com/pypi/simple
+
+# PyTorch (pinned to prevent dependency upgrades)
+# MUST match version installed in Dockerfile and custom_rasterizer wheel
+torch==2.5.1+cu121
+torchvision==0.20.1+cu121
+torchaudio==2.5.1+cu121
 
 # Build Tools
 ninja==1.11.1.1
