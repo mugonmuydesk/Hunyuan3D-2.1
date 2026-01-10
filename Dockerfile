@@ -161,10 +161,9 @@ RUN python -c "from huggingface_hub import snapshot_download; snapshot_download(
 RUN test -d /models/Hunyuan3D-2.1 || (echo "ERROR: Model not downloaded" && exit 1)
 RUN ls -la /models/Hunyuan3D-2.1/
 
-# Optional: RealESRGAN weights
-RUN mkdir -p weights && \
-    wget -q https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth \
-    -O weights/RealESRGAN_x4plus.pth || echo "WARN: RealESRGAN weights not downloaded (optional)"
+# ONNX-based RealESRGAN upscaler (replaces basicsr/realesrgan packages)
+COPY onnx_upscaler.py /app/onnx_upscaler.py
+COPY weights/realesrgan_x4plus.onnx /app/weights/realesrgan_x4plus.onnx
 
 # =============================================================================
 # STAGE 9: Copy handler and final verification
@@ -173,6 +172,9 @@ COPY handler.py /app/handler.py
 
 # VERIFY: Handler file exists and has correct syntax
 RUN python -m py_compile /app/handler.py && echo "handler.py: syntax OK"
+
+# VERIFY: ONNX upscaler can be imported
+RUN python -c "from onnx_upscaler import upscale_image; print('ONNX upscaler: OK')"
 
 # VERIFY: All imports in handler work
 RUN python -c "\
