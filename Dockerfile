@@ -17,7 +17,7 @@ ENV MAX_JOBS=4
 # =============================================================================
 # STAGE 1: System dependencies
 # =============================================================================
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     git-lfs \
     wget \
@@ -37,8 +37,8 @@ RUN apt-get update && apt-get install -y \
     && add-apt-repository ppa:deadsnakes/ppa -y \
     && add-apt-repository ppa:ubuntu-toolchain-r/test -y \
     && apt-get update \
-    && apt-get install -y python3.12 python3.12-dev python3.12-venv \
-    && apt-get install -y libstdc++6 \
+    && apt-get install -y --no-install-recommends python3.12 python3.12-dev python3.12-venv \
+    && apt-get install -y --no-install-recommends libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Python 3.12 as default (MUST match locally-built wheel: cp312)
@@ -87,7 +87,7 @@ RUN test -f /app/requirements.txt || (echo "ERROR: requirements.txt not found" &
 # STAGE 4a: Install Blender for bpy support
 # =============================================================================
 # Use official Blender tarball - PPA has broken dependencies on Ubuntu 22.04
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 \
     libxkbcommon0 libsm6 libice6 \
     && rm -rf /var/lib/apt/lists/*
