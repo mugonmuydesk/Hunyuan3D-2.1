@@ -138,7 +138,7 @@ WORKDIR /app/hy3dpaint/DifferentiableRenderer
 RUN pip install --no-cache-dir -e . 2>&1 || echo "WARN: mesh_inpaint_processor build failed (optional)"
 
 # Check if it installed (optional, so don't fail)
-RUN python -c "try:\n    from mesh_inpaint_processor import meshVerticeInpaint\n    print('mesh_inpaint_processor: OK')\nexcept ImportError:\n    print('mesh_inpaint_processor: NOT INSTALLED (optional)')"
+RUN python -c "from mesh_inpaint_processor import meshVerticeInpaint; print('mesh_inpaint_processor: OK')" || echo "mesh_inpaint_processor: NOT INSTALLED (optional)"
 
 # =============================================================================
 # STAGE 7: RunPod SDK
